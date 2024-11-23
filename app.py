@@ -108,8 +108,7 @@ if prompt := st.chat_input("Ask about your database schema"):
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 response = st.session_state.agent_executor.run(
-                    input=prompt,
-                    return_only_outputs=True
-                )["output"]
+                    input=prompt
+                )
                 st.session_state.messages.append({"role": "assistant", "content": response})
                 st.markdown(response)
