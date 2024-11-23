@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+from dotenv import load_dotenv
 from langchain.agents import create_sql_agent
 from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 from langchain.sql_database import SQLDatabase
@@ -43,15 +44,17 @@ def initialize_agent(connection_string):
         st.error(f"Error initializing agent: {str(e)}")
         return None
 
+# Load environment variables
+load_dotenv()
+
+# Check for OpenAI API key
+if not os.getenv("OPENAI_API_KEY"):
+    st.error("Please set OPENAI_API_KEY in your environment or .env file")
+    st.stop()
+
 # Sidebar for database connection
 with st.sidebar:
     st.title("Database Connection")
-    
-    # OpenAI API Key input
-    openai_api_key = st.text_input("OpenAI API Key", type="password")
-    if openai_api_key:
-        os.environ["OPENAI_API_KEY"] = openai_api_key
-    
     db_type = st.selectbox("Database Type", ["PostgreSQL", "MySQL"])
     host = st.text_input("Host", "localhost")
     port = st.text_input("Port", "5432" if db_type == "PostgreSQL" else "3306")
@@ -60,7 +63,7 @@ with st.sidebar:
     password = st.text_input("Password", type="password")
     
     if st.button("Connect"):
-        if all([host, port, database, username, password, openai_api_key]):
+        if all([host, port, database, username, password]):
             connection_string = create_connection_string(
                 db_type, host, port, database, username, password
             )
