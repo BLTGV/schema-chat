@@ -6,6 +6,8 @@ from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 from langchain.sql_database import SQLDatabase
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import AgentExecutor
+from langchain.memory import ConversationBufferMemory
+from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from sqlalchemy import create_engine, inspect
 
 # Page config
@@ -32,11 +34,21 @@ def initialize_agent(connection_string):
         llm = ChatOpenAI(temperature=0, model_name="gpt-4")
         toolkit = SQLDatabaseToolkit(db=db, llm=llm)
         
+        # Initialize memory with Streamlit chat message history
+        msgs = StreamlitChatMessageHistory()
+        memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            return_messages=True,
+            output_key="output",
+            chat_memory=msgs
+        )
+        
         agent_executor = create_sql_agent(
             llm=llm,
             toolkit=toolkit,
             verbose=True,
             agent_type="openai-tools",
+            memory=memory,
         )
         
         return agent_executor
@@ -95,6 +107,9 @@ if prompt := st.chat_input("Ask about your database schema"):
         # Get AI response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response = st.session_state.agent_executor.run(prompt)
+                response = st.session_state.agent_executor.run(
+                    input=prompt,
+                    return_only_outputs=True
+                )["output"]
                 st.session_state.messages.append({"role": "assistant", "content": response})
                 st.markdown(response)
